@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Processos</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>Acompanhamento de Processos</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Setor</th>
+        <th>Processo</th>
+        <th>Status</th>
+        <th>Progresso</th>
+      </tr>
+    </thead>
+    <tbody id="processTable"></tbody>
+  </table>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbw3QKNDgk1CrtT7EGUAp91pRgx9HpOeEgtIDYhRtUj_74wUDrCOdm2Tc8u8XjbtWWtOsQ/exec"; // Substitua pela URL do Apps Script
+
+    function loadData() {
+      fetch(API_URL)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            alert("Erro: " + data.error);
+            return;
+          }
+          const tableBody = document.getElementById("processTable");
+          tableBody.innerHTML = "";
+          data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${row.Setor}</td>
+              <td>${row.Processo}</td>
+              <td>${row.Status}</td>
+              <td>${row.Progresso}</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        })
+        .catch(error => {
+          console.error("Erro ao carregar dados:", error);
+          alert("Erro ao carregar os dados da planilha. Verifique o console para detalhes.");
+        });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

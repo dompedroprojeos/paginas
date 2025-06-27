@@ -336,30 +336,21 @@
         let currentFilter = 'todos';
 
         // Função para buscar dados do Google Sheets
-        async function fetchDataFromGAS() {
+       async function fetchDataFromGAS() {
   try {
-    console.log('Fetching data from:', GAS_URL);
-    const response = await fetch(GAS_URL, {
-      method: 'GET',
+    const response = await fetch(`${GAS_URL}?cache=${Date.now()}`, {
+      mode: 'no-cors', // Tente com e sem isso
       headers: {
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       }
     });
-    console.log('Response status:', response.status, response.statusText);
-    const text = await response.text();
-    console.log('Raw response:', text);
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (parseError) {
-      throw new Error(`Erro ao parsear JSON: ${parseError.message}`);
-    }
-    if (data.status !== 200 || data.data?.error) {
-      throw new Error(data.data?.error || data.data?.message || `Erro HTTP ${response.status}: ${response.statusText}`);
-    }
-    return data.data.data;
+    
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.json();
+    return data.data || data; // Tente ambas as opções
   } catch (error) {
-    console.error('Erro ao buscar dados:', error);
+    console.error('Fetch error:', error);
     throw error;
   }
 }
@@ -426,14 +417,18 @@
             document.getElementById('stats').innerHTML = statsHtml;
         }
 
-        function renderData(data) {
-            const content = document.getElementById('content');
-            
-            if (!data || data.length === 0) {
-                content.innerHTML = '<div class="empty-state"><h3>📋 Nenhum processo encontrado</h3><p>Não há processos com os filtros selecionados.</p></div>';
-                return;
-            }
-
+      function renderData(data) {
+  const content = document.getElementById('content');
+  
+  if (!data) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <h3>⚠️ Erro nos dados</h3>
+        <p>Os dados recebidos não estão no formato esperado.</p>
+        <p>Verifique o console para detalhes.</p>
+      </div>`;
+    return;
+  }
             const cardsHtml = data.map((item, index) => `
                 <div class="card" style="animation-delay: ${index * 0.1}s">
                     <div class="card-header">

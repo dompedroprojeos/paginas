@@ -1,62 +1,479 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Processos</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { text-align: center; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Processos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border-color: white;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            margin: 40px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .setor {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .processo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+
+        .status.concluido {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.andamento {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.pendente {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .progress-container {
+            margin-top: 15px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 60px 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .filter-info {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 200px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Acompanhamento de Processos</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Setor</th>
-        <th>Processo</th>
-        <th>Status</th>
-        <th>Progresso</th>
-      </tr>
-    </thead>
-    <tbody id="processTable"></tbody>
-  </table>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Dashboard de Processos</h1>
+            <p>Acompanhe o progresso dos seus processos em tempo real</p>
+        </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbw3QKNDgk1CrtT7EGUAp91pRgx9HpOeEgtIDYhRtUj_74wUDrCOdm2Tc8u8XjbtWWtOsQ/exec"; // Substitua pela URL do Apps Script
+        <div class="controls">
+            <button class="btn active" onclick="filterData('todos')">Todos</button>
+            <button class="btn" onclick="filterData('concluido')">Concluídos</button>
+            <button class="btn" onclick="filterData('andamento')">Em Andamento</button>
+            <button class="btn" onclick="filterData('pendente')">Pendentes</button>
+            <button class="btn" onclick="loadData()">🔄 Atualizar</button>
+        </div>
 
-    function loadData() {
-      fetch(API_URL)
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            alert("Erro: " + data.error);
-            return;
-          }
-          const tableBody = document.getElementById("processTable");
-          tableBody.innerHTML = "";
-          data.forEach(row => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${row.Setor}</td>
-              <td>${row.Processo}</td>
-              <td>${row.Status}</td>
-              <td>${row.Progresso}</td>
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+
+        <div id="stats" class="stats"></div>
+        <div id="filter-info" class="filter-info" style="display: none;"></div>
+        <div id="content" class="grid"></div>
+    </div>
+
+    <script>
+        // URL do seu Google Apps Script Web App
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbw3QKNDgk1CrtT7EGUAp91pRgx9HpOeEgtIDYhRtUj_74wUDrCOdm2Tc8u8XjbtWWtOsQ/exec';
+        
+        // Função para buscar dados do Google Sheets
+        async function fetchDataFromGAS() {
+            try {
+                const response = await fetch(GAS_URL);
+                const data = await response.json();
+                
+                // Verifica se houve erro
+                if (data.error) {
+                    throw new Error(data.message || 'Erro ao carregar dados');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+                throw error;
+            }
+        }
+
+        let allData = [];
+        let currentFilter = 'todos';
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'grid';
+            document.getElementById('stats').style.display = 'grid';
+        }
+
+        function loadData() {
+            showLoading();
+            
+            // Busca dados reais do Google Sheets
+            fetchDataFromGAS()
+                .then(data => {
+                    allData = data;
+                    renderStats();
+                    renderData(allData);
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar dados:', error);
+                    document.getElementById('content').innerHTML = 
+                        '<div class="empty-state"><h3>❌ Erro ao carregar dados</h3><p>' + error.message + '</p></div>';
+                    hideLoading();
+                });
+        }
+
+        function renderStats() {
+            const total = allData.length;
+            const concluidos = allData.filter(item => item.Status === 'concluido').length;
+            const andamento = allData.filter(item => item.Status === 'andamento').length;
+            const pendentes = allData.filter(item => item.Status === 'pendente').length;
+
+            const statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-number">${total}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${concluidos}</div>
+                    <div class="stat-label">Concluídos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${andamento}</div>
+                    <div class="stat-label">Em Andamento</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${pendentes}</div>
+                    <div class="stat-label">Pendentes</div>
+                </div>
             `;
-            tableBody.appendChild(tr);
-          });
-        })
-        .catch(error => {
-          console.error("Erro ao carregar dados:", error);
-          alert("Erro ao carregar os dados da planilha. Verifique o console para detalhes.");
-        });
-    }
 
-    loadData();
-  </script>
+            document.getElementById('stats').innerHTML = statsHtml;
+        }
+
+        function renderData(data) {
+            const content = document.getElementById('content');
+            
+            if (data.length === 0) {
+                content.innerHTML = '<div class="empty-state"><h3>📋 Nenhum processo encontrado</h3><p>Não há processos com os filtros selecionados.</p></div>';
+                return;
+            }
+
+            const cardsHtml = data.map((item, index) => `
+                <div class="card" style="animation-delay: ${index * 0.1}s">
+                    <div class="card-header">
+                        <div class="setor">${item.Setor}</div>
+                    </div>
+                    <div class="processo">${item.Processo}</div>
+                    <div class="status ${item.Status}">${getStatusText(item.Status)}</div>
+                    <div class="progress-container">
+                        <div class="progress-label">
+                            <span>Progresso</span>
+                            <span>${item.Progresso}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${item.Progresso}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = cardsHtml;
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'concluido': '✅ Concluído',
+                'andamento': '⏳ Em Andamento',
+                'pendente': '⏸️ Pendente'
+            };
+            return statusMap[status] || status;
+        }
+
+        function filterData(filter) {
+            currentFilter = filter;
+            
+            // Atualiza botões ativos
+            document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            let filteredData;
+            let filterInfo = document.getElementById('filter-info');
+
+            if (filter === 'todos') {
+                filteredData = allData;
+                filterInfo.style.display = 'none';
+            } else {
+                filteredData = allData.filter(item => item.Status === filter);
+                filterInfo.style.display = 'block';
+                filterInfo.innerHTML = `📊 Mostrando ${filteredData.length} processo(s) com status: <strong>${getStatusText(filter)}</strong>`;
+            }
+
+            renderData(filteredData);
+        }
+
+        // Carrega os dados ao inicializar a página
+        window.addEventListener('load', loadData);
+    </script>
 </body>
 </html>

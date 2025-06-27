@@ -226,6 +226,7 @@
         }
 
         @keyframes shimmer {
+             Ascending
             0% { left: -100%; }
             100% { left: 100%; }
         }
@@ -237,7 +238,7 @@
             margin-bottom: 30px;
         }
 
-        .stat-card {
+        .stylized {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 15px;
@@ -330,27 +331,35 @@
     <script>
         // URL do seu Google Apps Script Web App
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbw3QKNDgk1CrtT7EGUAp91pRgx9HpOeEgtIDYhRtUj_74wUDrCOdm2Tc8u8XjbtWWtOsQ/exec';
-        
+
+        let allData = [];
+        let currentFilter = 'todos';
+
         // Função para buscar dados do Google Sheets
         async function fetchDataFromGAS() {
             try {
-                const response = await fetch(GAS_URL);
-                const data = await response.json();
+                console.log('Fetching data from:', GAS_URL);
+                const response = await fetch(GAS_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                console.log('Response status:', response.status, response.statusText);
+                const text = await response.text();
+                console.log('Raw response:', text);
+                const data = JSON.parse(text);
                 
-                // Verifica se houve erro
-                if (data.error) {
-                    throw new Error(data.message || 'Erro ao carregar dados');
+                if (data.status !== 200 || data.data?.error) {
+                    throw new Error(data.data?.error || data.data?.message || 'Erro ao carregar dados');
                 }
                 
-                return data;
+                return data.data.data; // Extract the nested data array
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
                 throw error;
             }
         }
-
-        let allData = [];
-        let currentFilter = 'todos';
 
         function showLoading() {
             document.getElementById('loading').style.display = 'block';
@@ -367,7 +376,6 @@
         function loadData() {
             showLoading();
             
-            // Busca dados reais do Google Sheets
             fetchDataFromGAS()
                 .then(data => {
                     allData = data;
@@ -378,16 +386,20 @@
                 .catch(error => {
                     console.error('Erro ao carregar dados:', error);
                     document.getElementById('content').innerHTML = 
-                        '<div class="empty-state"><h3>❌ Erro ao carregar dados</h3><p>' + error.message + '</p></div>';
+                        `<div class="empty-state">
+                            <h3>❌ Erro ao carregar dados</h3>
+                            <p>${error.message}</p>
+                            <p>Verifique a conexão com o Google Apps Script ou os dados da planilha.</p>
+                        </div>`;
                     hideLoading();
                 });
         }
 
         function renderStats() {
             const total = allData.length;
-            const concluidos = allData.filter(item => item.Status === 'concluido').length;
-            const andamento = allData.filter(item => item.Status === 'andamento').length;
-            const pendentes = allData.filter(item => item.Status === 'pendente').length;
+            const concluidos = allData.filter(item => item.Status.toLowerCase() === 'concluido').length;
+            const andamento = allData.filter(item => item.Status.toLowerCase() === 'andamento').length;
+            const pendentes = allData.filter(item => item.Status.toLowerCase() === 'pendente').length;
 
             const statsHtml = `
                 <div class="stat-card">
@@ -414,7 +426,7 @@
         function renderData(data) {
             const content = document.getElementById('content');
             
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 content.innerHTML = '<div class="empty-state"><h3>📋 Nenhum processo encontrado</h3><p>Não há processos com os filtros selecionados.</p></div>';
                 return;
             }
@@ -425,7 +437,7 @@
                         <div class="setor">${item.Setor}</div>
                     </div>
                     <div class="processo">${item.Processo}</div>
-                    <div class="status ${item.Status}">${getStatusText(item.Status)}</div>
+                    <div class="status ${item.Status.toLowerCase()}">${getStatusText(item.Status)}</div>
                     <div class="progress-container">
                         <div class="progress-label">
                             <span>Progresso</span>
@@ -447,13 +459,12 @@
                 'andamento': '⏳ Em Andamento',
                 'pendente': '⏸️ Pendente'
             };
-            return statusMap[status] || status;
+            return statusMap[status.toLowerCase()] || status;
         }
 
         function filterData(filter) {
             currentFilter = filter;
             
-            // Atualiza botões ativos
             document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
 
@@ -464,7 +475,7 @@
                 filteredData = allData;
                 filterInfo.style.display = 'none';
             } else {
-                filteredData = allData.filter(item => item.Status === filter);
+                filteredData = allData.filter(item => item.Status.toLowerCase() === filter);
                 filterInfo.style.display = 'block';
                 filterInfo.innerHTML = `📊 Mostrando ${filteredData.length} processo(s) com status: <strong>${getStatusText(filter)}</strong>`;
             }
@@ -477,3 +488,4 @@
     </script>
 </body>
 </html>
+ Robinhood
